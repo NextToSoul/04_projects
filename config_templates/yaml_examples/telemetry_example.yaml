@@ -1,0 +1,181 @@
+ # ============================================================
+ # 遥测参数表模板 — Telemetry Parameter Table Template
+ # 文件名建议: config/telemetry/<device_name>_<frame_type>.yaml
+ # 注意: 此文件由脚本从 Excel 自动生成，请勿手工编辑
+ # ============================================================
+ 
+ protocol: rs422_ppcu
+ frame_type: response
+ 
+ # ---------- 慢帧遥测参数 ----------
+ parameters:
+   - id: TMHEDTT2001
+     name: 软件版本
+     frame: slow
+     offset: 0
+     length: 1
+     type: uint8
+     description: 当前运行的软件版本号
+ 
+   - id: TMHEDTT2004
+     name: 本次点火有效点火时长
+     frame: slow
+     offset: 2
+     length: 2
+     type: uint16
+     unit: s
+     scale: 1
+     description: 本次点火有效点火时长
+ 
+   - id: TMHEDTT2079
+     name: 本次阳极点火设置时长
+     frame: slow
+     offset: 12
+     length: 2
+     type: uint16
+     unit: s
+     scale: 1
+     description: 本次阳极点火设置时长
+ 
+   # --- 有转换公式的参数 ---
+   - id: TMHEDTZ2006
+     name: 比例阀P1回采控制电流
+     frame: slow
+     offset: 18
+     length: 2
+     type: uint16
+     unit: mA
+     formula: b = a / 300
+     description: 比例阀P1回采控制电流
+ 
+   # --- 有符号数值参数 ---
+   - id: TMHEDTZ2007
+     name: 低压传感器LP1压力滤波值
+     frame: slow
+     offset: 20
+     length: 2
+     type: int16
+     unit: kPa
+     formula: b = a / 100
+     description: 低压传感器LP1压力滤波值
+ 
+   # --- 枚举类型参数 ---
+   - id: TMHEDT2023
+     name: 流量控制模式
+     frame: slow
+     offset: 28
+     length: 1
+     type: enum
+     enum_map:
+       0x00: 压传闭环
+       0x11: 阳极电流闭环
+       0x22: 双级减压
+     description: 流量控制模式
+ 
+   - id: TMHEDT2024
+     name: 控制策略类型
+     frame: slow
+     offset: 29
+     length: 1
+     type: enum
+     enum_map:
+       0x00: PID
+       0x01: ADRC
+       0x02: 固定开环
+     description: 闭环控制策略类型
+ 
+   # --- 状态量 (位域) ---
+   - id: TMHEDT1022
+     name: 电磁阀SV2状态检测
+     frame: fast
+     offset: 46
+     length: 2bit
+     type: status
+     status_map:
+       0: 关
+       3: 开
+     description: 电磁阀SV2状态遥测
+ 
+   - id: TMHEDTT1020
+     name: 电磁阀SV1状态检测
+     frame: fast
+     offset: 46
+     bit_offset: 2
+     length: 2bit
+     type: status
+     status_map:
+       0: 关
+       3: 开
+     description: 电磁阀SV1状态遥测
+ 
+   # --- 工作模式/子模式 (位域) ---
+   - id: TMHEDTT1005
+     name: 工作模式字
+     frame: fast
+     offset: 14
+     length: 4bit
+     type: enum
+     enum_map:
+       0x0: 待机模式
+       0x1: 推进模式
+       0x2: 应急模式
+       0x3: 管路预处理模式
+       0x4: 阴极激活模式
+       0x5: 准备模式
+       0x6: 自检模式
+       0xF: 维护模式
+     description: 电推模式字, 见附表1
+ 
+   - id: TMHEDTT1006
+     name: 工作子模式字
+     frame: fast
+     offset: 14
+     bit_offset: 4
+     length: 4bit
+     type: enum
+     enum_map:
+       0x0: 下游供气管路放气/阴极0.8A加热
+       0x1: 贮供流量调节阶段/阴极1.5A加热
+       0x2: 推力器阴极加热与阴极暂态点火阶段/阴极2.0A加热
+       0x3: 推力器阳极暂态点火阶段/阴极2.5A加热
+       0x4: 推力器阳极稳态点火阶段/阴极2.9A加热
+       0x5: 阴极3.2A加热
+       0x6: 阴极点火开阀排气/除气稳态
+       0x7: 流量调节阶段
+       0x8: 阴极加热点火
+       0x9: 阴极稳态点火/推力器关阀和点火退出阶段
+       0xA: 点火完成排气阶段
+       0xF: 待机模式
+     description: 电推工作子模式字, 见附表2
+ 
+   # --- 异常标志位 ---
+   - id: TMHEDTZ1044
+     name: 阳极高功率退出
+     frame: fast
+     offset: 56
+     bit_offset: 0
+     length: 1bit
+     type: status
+     status_map:
+       0: 正常
+       1: 异常
+     description: 阳极高功率退出标志
+ 
+   # --- IEEE754 浮点数 ---
+   - id: TMHEDTZ2101
+     name: 阳极稳态电压
+     frame: slow
+     offset: 120
+     length: 4
+     type: float32
+     byte_order: big_endian
+     unit: V
+     description: 阳极稳态电压, IEEE754格式
+ 
+ # ---------- 全局元数据 ----------
+ meta:
+   response_header: [0x1A, 0xCF]
+   slow_frame_apid: 0x525
+   fast_frame_apid: 0x525
+   slow_frame_period: 1s
+   fast_frame_period: 100ms

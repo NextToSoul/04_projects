@@ -1,0 +1,117 @@
+ # ============================================================
+ # 指令码表模板 — Command Code Table Template
+ # 文件名建议: config/commands/<device_name>_<type>.yaml
+ # 注意: 此文件由脚本从 Excel 自动生成，请勿手工编辑
+ # ============================================================
+ 
+ # 引用协议定义 (protocols/ 中的文件名不含扩展名)
+ protocol: rs422_ppcu
+ 
+ # 默认 APID (高位:设备标识, 低位:数据类型)
+ apid: 0x520
+ 
+ # 指令类型: immediate (立即令), inject (参数注入)
+ type: immediate
+ 
+ # ---------- 指令定义列表 ----------
+ commands:
+   # --- 无参数指令 ---
+   - name: TCHEDTTA000
+     description: 软件复位
+     code: 0x001A
+     params: []
+ 
+   # --- 枚举参数指令 ---
+   - name: TCHEDTTA003_2
+     description: 工作模式切换
+     code: 0x0030
+     params:
+       - name: 工作模式
+         length: 1
+         type: enum
+         default: 待机模式
+         values:
+           - value: 0x00
+             label: 待机模式
+           - value: 0x11
+             label: 推进模式
+           - value: 0x22
+             label: 应急模式
+           - value: 0x33
+             label: 管路预处理模式
+           - value: 0x44
+             label: 阴极激活模式
+           - value: 0x55
+             label: 准备模式
+           - value: 0x66
+             label: 自检模式
+           - value: 0xFF
+             label: 维护模式
+ 
+   # --- 数值参数指令 ---
+   - name: TCHEDTTA106
+     description: 正常点火时间设置
+     code: 0x03D8
+     params:
+       - name: 保留参数1
+         length: 2
+         type: hex
+         default: 0x0000
+       - name: 点火时长
+         length: 2
+         type: uint16
+         unit: s
+         scale: 1
+         default: 120
+         range:
+           min: 0
+           max: 65535
+ 
+   # --- 组合参数指令 ---
+   - name: TCHEDTTA016_1
+     description: 流量控制方式
+     code: 0x0307
+     params:
+       - name: 流量控制方式
+         length: 1
+         type: enum
+         values:
+           - value: 0x00
+             label: 压传闭环
+           - value: 0x11
+             label: 阳极电流闭环
+           - value: 0x22
+             label: 双级减压
+ 
+   # --- 多参数字段操作指令 ---
+   - name: TCHEDTTA301
+     description: 电磁阀SV1开
+     code: 0x0301
+     params:
+       - name: 电磁阀操作码
+         length: 2
+         type: hex
+         fixed: 0x0101
+ 
+   - name: TCHEDTTA302
+     description: 电磁阀SV2开
+     code: 0x0301
+     params:
+       - name: 电磁阀操作码
+         length: 2
+         type: hex
+         fixed: 0x0202
+ 
+   # --- CAN 专用: 定义 CAN ID 和 DLC ---
+   # - name: CAN_SET_PARAM
+   #   description: CAN参数设置
+   #   can_id_tx: 0x100
+   #   can_id_rx: 0x200
+   #   code: 0x01
+   #   params:
+   #     - name: 参数索引
+   #       length: 1
+   #     - name: 参数值
+   #       length: 4
+   #       type: float32
+   #       byte_order: big_endian

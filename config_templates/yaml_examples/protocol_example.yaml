@@ -1,0 +1,120 @@
+ # ============================================================
+ # 协议定义模板 — Protocol Definition Template
+ # 文件名建议: config/protocols/<device_name>.yaml
+ # 注意: 此文件由脚本从 Excel 自动生成，请勿手工编辑
+ # ============================================================
+ 
+ # 协议唯一标识符 (被 commands/ 和 telemetry/ 引用)
+ name: rs422_ppcu
+ 
+ # 协议类型, 决定使用哪个驱动插件
+ # 内置支持: rs422, can, tcp
+ type: rs422
+ 
+ # ---------- 物理层参数 ----------
+ baudrate: 115200
+ databits: 8
+ parity: odd
+ stopbits: 1
+ 
+ # ---------- TCP 连接参数 (仅 type: tcp 时有效) ----------
+ # host: 192.168.1.100
+ # port: 4000
+ # reconnect: true
+ # reconnect_interval: 2
+ 
+ # ---------- CAN 连接参数 (仅 type: can 时有效) ----------
+ # channel: PCAN_USBBUS1
+ # bitrate: 500000
+ # can_id_tx: 0x100
+ # can_id_rx: 0x200
+ 
+ # ---------- 帧结构定义 ----------
+ frame:
+   # 指令帧头 (发送)
+   header: [0xEB, 0x90]
+   # 应答帧头 (接收)
+   response_header: [0x1A, 0xCF]
+   # 字节序: big_endian (大端) 或 little_endian (小端)
+   byte_order: big_endian
+ 
+   # 校验和配置
+   checksum:
+     # 支持的算法: sum_invert_low16, sum_low16, crc16_modbus, crc32, none
+     algorithm: sum_invert_low16
+     # 校验范围: [start, end], 负数表示从末尾倒数, null 表示全部
+     # 例如 [2, -2] 表示从第3字节到倒数第2字节
+     range: [2, -2]
+ 
+   # 帧字段定义 (按字节偏移顺序)
+   fields:
+     - name: header
+       offset: 0
+       length: 2
+       fixed: [0xEB, 0x90]
+       description: 帧头标识
+ 
+     - name: version_type_apid
+       offset: 2
+       length: 2
+       encoding:
+         version: {bits: 3, default: 0b000}
+         type: {bits: 1, default: 0b0}
+         secondary_header: {bits: 1, default: 0b1}
+         apid: {bits: 11}
+       description: 版本号+类型+副导头+应用过程标识
+ 
+     - name: sequence_count
+       offset: 4
+       length: 2
+       auto_increment: true
+       description: 源包序列计数 (循环累加)
+ 
+     - name: data_length
+       offset: 6
+       length: 2
+       auto_calc: true
+       description: 数据域长度 (包数据长度减1)
+ 
+     - name: data
+       offset: 8
+       length: dynamic
+       length_from_field: data_length
+       description: 数据域 (指令码 + 参数)
+ 
+     - name: checksum
+       offset: end
+       length: 2
+       auto_calc: true
+       description: 校验和
+ 
+   # 响应帧字段定义 (用于遥测解析)
+   response_fields:
+     - name: header
+       offset: 0
+       length: 2
+       fixed: [0x1A, 0xCF]
+     - name: version_type_apid
+       offset: 2
+       length: 2
+     - name: sequence_count
+       offset: 4
+       length: 2
+     - name: data_length
+       offset: 6
+       length: 2
+     - name: data
+       offset: 8
+       length: dynamic
+     - name: checksum
+       offset: end
+       length: 2
+ 
+ # ---------- CAN 专用配置 (仅 type: can) ----------
+ # can:
+ #   extended_id: false
+ #   data_length_code: 8
+ #   frame_type: data
+ #   # 如果 CAN 的数据域也采用类似 RS422 的帧结构
+ #   # 可在此处复用上面的 fields 定义
+ #   use_inner_frame: true
