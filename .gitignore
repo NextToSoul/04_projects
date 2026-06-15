@@ -7,3 +7,5 @@
 .venv/
 
 temp_*.txt
+
+.pytest_cache/
