@@ -133,16 +133,12 @@
  │   │   └── cathode_activation_test.yaml
  │   └── devices/            # 设备实例 (YAML)
  │       └── lab_device.yaml
- ├── config_templates/       # Excel 模板和 YAML 模板参考
- │   ├── protocol_template.xlsx
- │   ├── commands_template.xlsx
+ ├── config_templates/       # Excel 模板
+  │   ├── commands_template.xlsx
  │   ├── telemetry_template.xlsx
- │   └── yaml_examples/
- │       ├── protocol_example.yaml
- │       ├── commands_example.yaml
- │       └── telemetry_example.yaml
- ├── scripts/
- │   └── convert_xlsx_to_yaml.py   # Excel → YAML 转换脚本
+
+ │   └── generate_commands_config.py
+│   └── generate_telemetry_config.py
  └── docs/
      └── specs/
          └── 2026-06-12-auto-test-platform-design.md
