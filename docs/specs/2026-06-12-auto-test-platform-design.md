@@ -554,26 +554,77 @@ rising_to 操作符: 单调上升趋势检测, 配合 start_value/end_value/tole
 时间窗口: at: +4s..+6s 代替精确时间点, 窗口内任意帧满足即通过
 
 ## 6. GUI 应用层 (PySide6)
- 
- ### 6.1 主窗口布局
- 
- 使用 QTabWidget 组织多标签页：
- 
- - **测试方案 (TestSuite)**: 树形方案列表，管理多个测试序列
- - **序列编辑 (SequenceEditor)**: 步骤列表 + 右侧属性面板，支持拖拽排序
- - **实时监控 (LiveMonitor)**: 遥测参数树 + 数值/波形显示 + 日志窗口
- - **报告查看 (ReportView)**: 测试结果概览 + 详细日志
- - **系统设置 (Settings)**: 连接管理（串口/CAN/TCP）、配置文件路径
- 
- ### 6.2 关键交互设计
- 
- - 序列编辑器中选中指令后，右侧自动加载参数定义和预期判据编辑器
- - 实时监控与测试执行独立
- - 运行中可暂停/继续/中止/手动发指令
- 
- ---
- 
- ## 7. 错误处理策略
+
+### 6.1 架构
+
+GUI 层直接调用 Phase 1-3 模块, 不重复实现业务逻辑。
+
+main_window.py -> 5 个标签页
+ suite_panel    -> SequenceLoader (序列加载/保存)
+ editor_panel   -> CommandTable, frame_encoder (指令编辑/编码)
+ monitor_panel  -> TcpDriver, decode_telemetry_frame (实时监控)
+ report_panel   -> TestRunner (执行/报告)
+ settings_panel -> registry + 协议配置 (连接管理)
+
+### 6.2 文件结构
+
+src/gui/
+ __init__.py
+ main_window.py          QTabWidget + 5 个标签页
+ panels/
+   suite_panel.py        测试方案管理
+   editor_panel.py       序列编辑器
+   monitor_panel.py      实时监控
+   report_panel.py       报告查看
+   settings_panel.py     系统设置
+ widgets/
+   step_widget.py        步骤属性编辑器
+   check_widget.py       判据条件编辑器
+   timeline_widget.py    时序编辑器
+
+### 6.3 系统设置 - 协议切换
+
+协议下拉框 (QComboBox) 切换时, QStackedWidget 动态切换表单:
+
+- TCP 表单: 主机 (QLineEdit) + 端口 (QSpinBox) + 超时 (QDoubleSpinBox)
+- RS-422 表单: 串口 (QComboBox) + 波特率 + 校验位 + 数据位 + 停止位
+- CAN 表单: 通道 (QComboBox) + 比特率 + 发送ID + 接收ID
+
+新增协议只需添加一个 QWidget 页面注册到 QStackedWidget, 不需要改现有逻辑。
+
+### 6.4 系统设置 - 配置文件路径
+
+使用动态 QTableWidget 列表代替固定控件, 支持扩展:
+
+每行: 名称 (QLineEdit) + 路径 (QLineEdit + 浏览按钮) + 删除按钮
+用户可添加新行, 指向任意 Excel 文件。
+
+引擎启动时根据名称关键字自动选择加载类:
+- 含 指令 -> CommandTable
+- 含 遥测 -> TelemetryTable
+- 含 注入 -> InjectTable
+- 其他 -> load_excel_config 通用加载
+
+### 6.5 面板功能
+
+- 测试方案: 树形列表浏览序列文件, 打开/保存/新建
+- 序列编辑: 左侧步骤列表(拖拽排序), 右侧动态属性面板
+- 实时监控: 参数树勾选监视项, 数值刷新, 日志窗口
+- 报告查看: 通过/失败概览, 步骤详细日志, 导出
+- 系统设置: 协议切换 + 配置文件动态列表
+
+### 6.6 编辑器动态交互
+
+选中一个步骤后, 属性面板自动根据命令类型切换:
+
+- 枚举参数 -> QComboBox (选项来自枚举映射表)
+- 数值参数 -> QLineEdit + 进制提示 (十进制/十六进制自动识别)
+- 无参数 -> 隐藏参数控件
+
+判据编辑器支持:
+- 条件行: 参数选择 + 操作符 + 期望值 + 可选容差
+- 条件组: AND/OR 切换 + 添加子条件 + 递归嵌套
+## 7. 错误处理策略
  
  ### 7.1 异常分级
  
